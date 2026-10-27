@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fff3f5" />
+  <title>A Little Birthday Surprise ♡</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+    :root {
+      --ink: #493b4a;
+      --muted: #796a7a;
+      --pink: #ef9eae;
+      --rose: #f8dce2;
+      --cream: #fff9f4;
+      --lavender: #eee8f8;
+      --night: #151c38;
+      --night-card: #222b4c;
+      --white: #fffdfb;
+      --shadow: 0 24px 70px rgba(91, 60, 83, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, #fff8f3 0%, #fff0f4 52%, #f3effb 100%);
+      transition: background 1s ease, color .8s ease;
+      overflow-x: hidden;
+    }
+    body.night {
+      color: #f8efff;
+      background: radial-gradient(ellipse at 50% 0%, #303b68 0%, #1c2546 45%, #11172f 100%);
+    }
+    button { font: inherit; }
+    .app { min-height: 100vh; position: relative; isolation: isolate; overflow: hidden; }
+    .ambient {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+    }
+    .ambient::before, .ambient::after {
+      content: ''; position: absolute; width: 340px; height: 340px; border-radius: 50%;
+      filter: blur(4px); opacity: .42;
+    }
+    .ambient::before { background: #ffdce5; top: -160px; left: -120px; }
+    .ambient::after { background: #e8e2fb; right: -140px; bottom: -190px; }
+    body.night .ambient::before, body.night .ambient::after { opacity: .10; background: #8b9eea; }
+
+    .topline {
+      width: min(100% - 36px, 900px); margin: 0 auto; padding: 24px 0 0;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      color: var(--muted); font-size: .79rem; letter-spacing: .08em; text-transform: uppercase;
+    }
+    body.night .topline { color: #c4c9e8; }
+    .brand { font-weight: 700; }
+    .progress { display: flex; align-items: center; gap: 7px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .24; transition: .3s ease; }
+    .dot.active { opacity: 1; background: var(--pink); transform: scale(1.35); }
+    body.night .dot.active { background: #f3b5cb; }
+
+    main { width: 100%; min-height: calc(100vh - 60px); display: grid; place-items: center; padding: 30px 18px 54px; }
+    .screen {
+      display: none; width: min(100%, 740px); text-align: center; margin: auto;
+      animation: enter .72s cubic-bezier(.2,.75,.25,1) both;
+    }
+    .screen.active { display: block; }
+    @keyframes enter { from { opacity: 0; transform: translateY(18px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .eyebrow { color: #be8494; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; margin: 0 0 12px; }
+    body.night .eyebrow { color: #f1afc7; }
+    h1, h2 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; line-height: 1.15; }
+    h1 { font-size: clamp(2.15rem, 6vw, 3.65rem); margin: 0 0 16px; }
+    h2 { font-size: clamp(1.8rem, 5vw, 2.8rem); margin: 0 0 14px; }
+    .copy { font-size: clamp(1rem, 2.6vw, 1.14rem); line-height: 1.85; color: var(--muted); max-width: 650px; margin: 0 auto; }
+    body.night .copy { color: #d4d9ee; }
+    .actions { margin-top: 28px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      border: 0; border-radius: 999px; padding: 14px 25px; cursor: pointer;
+      color: #fff; background: linear-gradient(135deg, #e98fa4, #d77b98);
+      box-shadow: 0 10px 24px rgba(215, 123, 152, .26); font-weight: 700;
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(215, 123, 152, .34); filter: saturate(1.08); }
+    .btn:active { transform: translateY(1px) scale(.98); }
+    .btn:focus-visible, .balloon:focus-visible, .flip-card:focus-visible, .envelope:focus-visible { outline: 3px solid #ba7590; outline-offset: 5px; }
+    body.night .btn { background: linear-gradient(135deg, #d98cae, #ae79bc); }
+    .hint { font-size: .86rem; color: var(--muted); margin-top: 13px; }
+    body.night .hint { color: #bdc5e8; }
+
+    /* Screen 1: floating balloon that pops when tapped. */
+    .balloon-stage { height: 290px; display: grid; place-items: center; perspective: 700px; }
+    .balloon {
+      position: relative; width: 164px; height: 196px; border: 0; cursor: pointer; color: white;
+      border-radius: 52% 48% 48% 52% / 47% 48% 52% 53%;
+      background: radial-gradient(circle at 32% 25%, #ffd5dc 0 5%, transparent 26%), linear-gradient(145deg, #f6a8b8, #e781a0 74%);
+      box-shadow: inset -13px -15px 28px rgba(156, 74, 105, .15), inset 9px 8px 20px rgba(255,255,255,.45), 0 24px 42px rgba(194, 107, 133, .22);
+      animation: bob 2.8s ease-in-out infinite;
+    }
+    .balloon::before { content: ''; position: absolute; width: 3px; height: 112px; top: 188px; left: 50%; background: rgba(129, 106, 130, .52); transform: rotate(3deg); transform-origin: top; }
+    .balloon::after { content: ''; position: absolute; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #df7d98; bottom: -8px; left: calc(50% - 8px); }
+    .balloon span { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 600; text-shadow: 0 2px 8px rgba(120,60,80,.2); }
+    .balloon.popped { animation: pop .34s ease-in forwards; pointer-events: none; }
+    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
+    @keyframes pop { 0% { transform: scale(1); opacity: 1; } 65% { transform: scale(1.25); opacity: .7; } 100% { transform: scale(0); opacity: 0; } }
+    .pop-reveal { display: none; max-width: 620px; margin: 0 auto; }
+    .pop-reveal.show { display: block; animation: enter .6s ease both; }
+    .pop-reveal p { font-size: clamp(1.04rem, 2.8vw, 1.22rem); line-height: 1.8; color: var(--muted); }
+
+    /* Screen 2: warm wish panel. */
+    .wish-card { padding: clamp(25px, 6vw, 54px); border-radius: 28px; background: rgba(255,255,255,.57); border: 1px solid rgba(255,255,255,.8); box-shadow: var(--shadow); backdrop-filter: blur(10px); }
+    .wish-card .copy { max-width: 630px; }
+
+    /* Screen 3: keepsake polaroid. Replace the placeholder image file beside this HTML. */
+    .polaroid {
+      width: min(290px, 76vw); margin: 0 auto 28px; padding: 12px 12px 42px; background: #fffdfb;
+      box-shadow: 0 18px 44px rgba(93, 68, 81, .2); transform: rotate(-2deg); transition: transform .35s ease;
+    }
+    .polaroid:hover { transform: rotate(0) translateY(-4px); }
+    .polaroid img { display: block; width: 100%; height: 240px; object-fit: cover; background: linear-gradient(135deg, #f9dce2, #eee7f4); color: #8b6e7f; }
+    .polaroid-caption { font-family: 'Playfair Display', serif; color: #7a6371; font-size: 1rem; margin-top: 12px; }
+    .memory-gallery { width: min(100%, 610px); margin: 22px auto 30px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .memory-frame { margin: 0; padding: 8px 8px 30px; background: #fffdfb; box-shadow: 0 12px 28px rgba(93,68,81,.16); transition: transform .25s ease; }
+    .memory-frame:nth-child(odd) { transform: rotate(-1.5deg); }
+    .memory-frame:nth-child(even) { transform: rotate(1.5deg); }
+    .memory-frame:hover { transform: translateY(-4px) rotate(0); }
+    .memory-frame img { width: 100%; height: 220px; display: block; object-fit: cover; background: #f4e8ee; }
+    .memory-frame figcaption { color: #7a6371; font: 500 .9rem 'Playfair Display', Georgia, serif; padding-top: 9px; }
+    .music-toggle { background: rgba(255,255,255,.84); color: #8d526c; border: 1px solid rgba(215,123,152,.32); box-shadow: none; }
+
+    /* Screen 4: accessible, clickable 3D flip card. */
+    .flip-card { width: min(100%, 540px); height: 400px; margin: 25px auto 0; cursor: pointer; perspective: 1200px; border-radius: 25px; }
+    .flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .75s cubic-bezier(.2,.7,.2,1); }
+    .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+    .flip-face { position: absolute; inset: 0; padding: 21px; border-radius: 25px; background: rgba(255,255,255,.88); box-shadow: var(--shadow); backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+    .flip-face.back { transform: rotateY(180deg); background: #fff8f5; }
+    .flip-face h3 { font: 600 1.25rem/1.25 'Playfair Display', Georgia, serif; margin: 10px 0 8px; }
+    .flip-face p { font-size: .92rem; line-height: 1.58; color: var(--muted); margin: 0; }
+    .mini-photo { width: 100px; height: 96px; padding: 5px; background: white; box-shadow: 0 7px 18px rgba(73,59,74,.15); transform: rotate(-3deg); }
+    .mini-photo img { width: 100%; height: 100%; display: block; object-fit: cover; background: linear-gradient(135deg, #f7d9e0, #eee8f8); color: #856e7f; }
+    .flip-instruction { font-size: .84rem; margin: 13px 0 0; color: var(--muted); }
+
+    /* Night screens: softly twinkling stars, purely decorative. */
+    .stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .8s ease; }
+    body.night .stars { opacity: 1; }
+    .star { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; box-shadow: 0 0 9px 2px rgba(209,221,255,.65); animation: twinkle 2.8s ease-in-out infinite; }
+    .star:nth-child(3n) { animation-delay: .8s; }
+    .star:nth-child(4n) { animation-delay: 1.5s; }
+    @keyframes twinkle { 0%,100% { opacity: .25; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.25); } }
+    .night-panel { padding: clamp(24px, 5vw, 45px); border-radius: 28px; background: rgba(34,43,76,.68); border: 1px solid rgba(200,210,255,.13); box-shadow: 0 25px 80px rgba(0,0,0,.2); backdrop-filter: blur(9px); }
+    .moon { font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 17px rgba(255,238,184,.55)); }
+
+    /* Screen 7: envelope opens and letter slides out. */
+    .envelope-wrap { height: 220px; display: grid; place-items: center; margin: 4px auto 14px; perspective: 800px; }
+    .envelope { width: min(280px, 78vw); height: 160px; border: 0; position: relative; cursor: pointer; background: #f3c5d1; border-radius: 8px; box-shadow: 0 16px 35px rgba(80,44,72,.18); overflow: visible; }
+    .envelope-base { position: absolute; inset: 0; overflow: hidden; border-radius: 8px; background: linear-gradient(145deg, #f5cbd5, #e9aabd); }
+    .envelope-base::before, .envelope-base::after { content: ''; position: absolute; inset: 0; }
+    .envelope-base::before { background: #f8dce3; clip-path: polygon(0 0, 50% 60%, 100% 0); }
+    .envelope-base::after { background: #eaaabd; clip-path: polygon(0 100%, 50% 48%, 100% 100%); }
+    .letter {
+      position: absolute; z-index: 1; left: 8%; top: 12%; width: 84%; height: 78%; padding: 14px;
+      display: grid; place-items: center; color: #81586c; font-family: 'Playfair Display', serif; font-size: 1.1rem;
+      border-radius: 4px; background: #fffdf8; box-shadow: 0 4px 14px rgba(87,57,75,.12);
+      transition: transform .9s cubic-bezier(.16,.8,.25,1); transform: translateY(0);
+    }
+    .envelope.open .letter { transform: translateY(-94px) rotate(-2deg); }
+    .flap { position: absolute; z-index: 2; inset: 0; transform-origin: top; transition: transform .55s ease; background: #f8dce3; clip-path: polygon(0 0, 50% 60%, 100% 0); }
+    .envelope.open .flap { transform: rotateX(180deg); z-index: 0; }
+    .letter-copy { display: none; max-width: 650px; margin: 0 auto; }
+    .letter-copy.show { display: block; animation: enter .7s ease both; }
+
+    /* Screen 8: finale, big photo and celebratory confetti. */
+    .final-photo {
+      display: block; width: min(420px, 85vw); height: min(360px, 66vw); min-height: 230px;
+      object-fit: cover; margin: 0 auto 23px; border: 9px solid rgba(255,255,255,.9); border-radius: 24px;
+      background: linear-gradient(135deg, #f6d7e0, #e8e0f5); box-shadow: 0 22px 60px rgba(68,47,77,.22);
+      opacity: 0; transform: translateY(15px) scale(.97); transition: opacity .8s ease, transform .8s ease;
+    }
+    .final-photo.visible { opacity: 1; transform: translateY(0) scale(1); }
+    .final-message { display: none; }
+    .final-message.show { display: block; animation: enter .7s ease both; }
+    .confetti-layer { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+    .confetti { position: absolute; top: -20px; width: 9px; height: 14px; opacity: .95; animation: fall var(--duration, 3s) linear forwards; }
+    @keyframes fall { to { transform: translate3d(var(--drift), 110vh, 0) rotate(760deg); opacity: .15; } }
+    .footer-note { margin-top: 30px; font-size: .78rem; color: rgba(111,91,111,.7); }
+    body.night .footer-note { color: rgba(218,222,246,.6); }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 560px) {
+      .topline { padding-top: 17px; font-size: .68rem; }
+      .progress { gap: 5px; }
+      .dot { width: 6px; height: 6px; }
+      main { min-height: calc(100vh - 48px); padding: 24px 15px 38px; }
+      .balloon-stage { height: 250px; }
+      .balloon { width: 145px; height: 174px; }
+      .balloon::before { top: 166px; height: 90px; }
+      .polaroid img { height: 215px; }
+      .memory-gallery { gap: 11px; }
+      .memory-frame { padding: 6px 6px 25px; }
+      .memory-frame img { height: 155px; }
+      .memory-frame figcaption { font-size: .78rem; }
+      .flip-card { height: 455px; }
+      .flip-face { padding: 18px; }
+      .flip-face p { font-size: .88rem; }
+      .envelope-wrap { height: 205px; }
+      .envelope.open .letter { transform: translateY(-82px) rotate(-2deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="ambient" aria-hidden="true"></div>
+    <div class="stars" aria-hidden="true">
+      <i class="star" style="left:8%;top:12%"></i><i class="star" style="left:19%;top:27%"></i><i class="star" style="left:32%;top:8%"></i><i class="star" style="left:44%;top:19%"></i><i class="star" style="left:58%;top:10%"></i><i class="star" style="left:72%;top:24%"></i><i class="star" style="left:87%;top:13%"></i><i class="star" style="left:94%;top:39%"></i><i class="star" style="left:13%;top:52%"></i><i class="star" style="left:27%;top:68%"></i><i class="star" style="left:39%;top:45%"></i><i class="star" style="left:62%;top:62%"></i><i class="star" style="left:78%;top:51%"></i><i class="star" style="left:90%;top:77%"></i><i class="star" style="left:7%;top:84%"></i><i class="star" style="left:48%;top:88%"></i><i class="star" style="left:71%;top:91%"></i><i class="star" style="left:54%;top:35%"></i>
+    </div>
+    <header class="topline">
+      <span class="brand">a little birthday surprise ♡</span>
+      <div class="progress" id="progress" aria-label="Progress through the birthday surprise"></div>
+    </header>
+
+    <main>
+      <!-- SCREEN 1: Tap the balloon to pop it and reveal the greeting. -->
+      <section class="screen active" id="screen-1" aria-labelledby="s1-title">
+        <p class="eyebrow" id="s1-title">A tiny surprise for you</p>
+        <div class="balloon-stage" id="balloonStage">
+          <button class="balloon" id="balloon" type="button" aria-label="Pop the birthday balloon"><span>Pop me!</span></button>
+        </div>
+        <div class="pop-reveal" id="popReveal" aria-live="polite">
+          <h1>Oyeee, birthday boy! 🎂</h1>
+          <p>You thought I'd let your birthday pass without doing something special? Hehe. I made a little something for you, so stop being lazy and click here. 😭❤️</p>
+          <div class="actions"><button class="btn" type="button" data-next>Click Here ♡</button></div>
+        </div>
+        <p class="hint" id="balloonHint">Psst… tap the balloon</p>
+      </section>
+
+      <!-- SCREEN 2: The warm birthday wish. -->
+      <section class="screen" id="screen-2" aria-labelledby="s2-title">
+        <div class="wish-card">
+          <p class="eyebrow">Today is all about you</p>
+          <h1 id="s2-title">Happy birthday, my favourite human ♡</h1>
+          <p class="copy">Happy birthday to my favourite annoying person. 😭❤️ I hope you smile a little extra today, eat something good, and have a genuinely nice day. I know things haven't been the easiest lately, but I really hope this new year of your life brings you more peace, happiness, and reasons to be proud of yourself. You deserve good things, okay?</p>
+          <div class="actions"><button class="btn" type="button" data-next>Next →</button></div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: Your five uploaded photos, styled as keepsake polaroids. -->
+      <section class="screen" id="screen-3" aria-labelledby="s3-title">
+        <p class="eyebrow">A little trip down memory lane</p>
+        <div class="polaroid">
+          <img src="memory-02.jpg" alt="A favorite sunset memory at the beach" />
+          <div class="polaroid-caption">one of my favorite days ♡</div>
+        </div>
+        <div class="memory-gallery" aria-label="More favorite memories">
+          <figure class="memory-frame"><img src="memory-01.jpg" alt="A sunny day together" /><figcaption>your sunny-day era ♡</figcaption></figure>
+          <figure class="memory-frame"><img src="memory-03.jpg" alt="A black and white portrait" /><figcaption>my favorite view</figcaption></figure>
+          <figure class="memory-frame"><img src="memory-04.jpg" alt="A peaceful evening by the sea" /><figcaption>golden hour with you</figcaption></figure>
+          <figure class="memory-frame"><img src="memory-05.jpg" alt="A sunset beach memory" /><figcaption>you, exactly where you belong ♡</figcaption></figure>
+        </div>
+        <h2 id="s3-title">Remember this? ♡</h2>
+        <p class="copy">8th August 2024. Who would've thought that meeting you would turn into something this important to me? We started as two people who didn't know how much they would eventually mean to each other, and somehow, you became such a big part of my life. We've had our ups and downs, but I'll always be grateful that our paths crossed.</p>
+        <div class="actions"><button class="btn" type="button" data-next>Next →</button></div>
+      </section>
+
+      <!-- SCREEN 4: Tap/click the card to flip between the playful and sweet sides. -->
+      <section class="screen" id="screen-4" aria-labelledby="s4-title">
+        <p class="eyebrow">Two sides of the same love story</p>
+        <h2 id="s4-title">A very honest review 😭</h2>
+        <div class="flip-card" id="flipCard" role="button" tabindex="0" aria-label="Flip the card to read the things I love about you" aria-pressed="false">
+          <div class="flip-inner">
+            <article class="flip-face front">
+              <div class="mini-photo"><img src="memory-01.jpg" alt="A playful sunny-day photo" /></div>
+              <h3>Things I hate about you (totally) 😭 - Expose me 😂</h3>
+              <p>1. Your unnecessary ragebaiting. 2. The way you annoy me and then act innocent. 3. How you somehow manage to make me angry over the smallest things. And 4. How I literally cannot stay mad at you for too long. Like, excuse me?? Can you be normal for once? 😭🤚🏻</p>
+            </article>
+            <article class="flip-face back">
+              <div class="mini-photo"><img src="memory-03.jpg" alt="A favorite portrait" /></div>
+              <h3>Things I love about you - Read this slowly 🫶🏻</h3>
+              <p>I love how your calmness balances my chaos. I love that you're the person I wanna tell my random thoughts to, even when they're completely pointless. I love the comfort I feel with you, and how being around you can make things feel a little lighter. And I love the little things about you that you probably don't even realise I notice.</p>
+            </article>
+          </div>
+        </div>
+        <p class="flip-instruction" id="flipInstruction">Click or tap to flip the card</p>
+        <div class="actions" id="flipNext" hidden><button class="btn" type="button" data-next>Next →</button></div>
+      </section>
+
+      <!-- SCREEN 5: Calm night-sky comfort note. -->
+      <section class="screen" id="screen-5" aria-labelledby="s5-title">
+        <div class="night-panel">
+          <div class="moon" aria-hidden="true">☾</div>
+          <p class="eyebrow">A gentle reminder, whenever you need it</p>
+          <h2 id="s5-title">For the days when life feels heavy 🫂</h2>
+          <p class="copy">I know you've been stressed about academics lately, and I wish I could make things a little easier for you. But please remember that you're more than your marks, deadlines, or the things you're worried about. You don't have to figure everything out in one day. Take a breath, give yourself some time, and don't forget to take care of yourself. I really hope life gets a little lighter for you. I'm rooting for you, always.</p>
+          <div class="actions"><button class="btn" type="button" data-next>Next →</button></div>
+        </div>
+      </section>
+
+      <!-- SCREEN 6: Distance, moon, and stars. -->
+      <section class="screen" id="screen-6" aria-labelledby="s6-title">
+        <div class="night-panel">
+          <div class="moon" aria-hidden="true">🌙</div>
+          <p class="eyebrow">Even from miles away</p>
+          <h2 id="s6-title">If I could be there today 🌙</h2>
+          <p class="copy">If I could wish for one thing today, it would be to be there with you. Not through a screen, not through a voice note, but actually beside you. I'd wish you in person, give you a proper hug, annoy you a little, and make you smile. I hope we get to celebrate many more birthdays together someday, without all these miles between us.</p>
+          <div class="actions"><button class="btn" type="button" data-next>Next →</button></div>
+        </div>
+      </section>
+
+      <!-- SCREEN 7: Click the envelope to open the letter. -->
+      <section class="screen" id="screen-7" aria-labelledby="s7-title">
+        <p class="eyebrow">One last thing…</p>
+        <h2 id="s7-title">Something I want you to know 💌</h2>
+        <div class="envelope-wrap">
+          <button class="envelope" id="envelope" type="button" aria-label="Open your birthday letter" aria-expanded="false">
+            <span class="letter" aria-hidden="true">A little letter, just for you ♡</span>
+            <span class="envelope-base" aria-hidden="true"></span>
+            <span class="flap" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="hint" id="envelopeHint">Tap the envelope to open it</p>
+        <div class="letter-copy" id="letterCopy" aria-live="polite">
+          <p class="copy">Whatever is happening between us right now, I didn't want today to pass without reminding you that you matter to me. Because i love u so much. I know things aren't perfect, and I know we have things we still need to understand about each other. But I'm genuinely glad I met you. I hope you have a beautiful birthday, and more than anything, I hope you're okay. You deserve to feel happy, loved, and at peace.</p>
+          <div class="actions"><button class="btn" type="button" data-next>Next →</button></div>
+        </div>
+      </section>
+
+      <!-- SCREEN 8: Final photo reveal and confetti. Replace final.jpg with your favorite couple photo. -->
+      <section class="screen" id="screen-8" aria-labelledby="s8-title">
+        <p class="eyebrow">Made with all my love</p>
+        <div class="actions" id="finalAction"><button class="btn" id="finalButton" type="button">Click for one final message ♡</button></div>
+        <div class="final-message" id="finalMessage">
+          <!-- PHOTO PLACEHOLDER: swap final.jpg for your favorite couple photo. -->
+          <img class="final-photo" id="finalPhoto" src="memory-05.jpg" alt="A favorite sunset beach memory" />
+          <h1 id="s8-title">The final surprise 🥹❤️</h1>
+          <p class="copy">And that's all, birthday boy. I hope this little website made you smile, even if it was just for a moment. Happy birthday, you annoying human. Take care of yourself, keep going, and don't forget to enjoy the little things too. And yes, I still expect you to stop ragebaiting me someday. (I know that's never happening.) 😭❤️ ND I LOVE YOUUU SO MUCHHH!!!</p>
+          <div class="actions"><button class="btn music-toggle" id="musicToggle" type="button" aria-pressed="false">Play birthday song ♡</button></div>
+          <p class="footer-note">The end… but definitely not the last birthday ♡</p>
+        </div>
+      </section>
+    </main>
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <!-- Your attached audio files: pop sound on balloon tap, birthday piano for the finale. -->
+    <audio id="balloonPopSound" src="balloon-pop.mp3" preload="auto"></audio>
+    <audio id="birthdayMusic" src="birthday-piano.mp3" preload="auto" loop></audio>
+  </div>
+
+  <script>
+    (() => {
+      const screens = [...document.querySelectorAll('.screen')];
+      const progress = document.getElementById('progress');
+      let current = 0;
+      let flipped = false;
+      let letterOpened = false;
+      let finaleShown = false;
+
+      // Create one progress dot for each screen.
+      screens.forEach((_, index) => {
+        const dot = document.createElement('span');
+        dot.className = 'dot' + (index === 0 ? ' active' : '');
+        dot.setAttribute('aria-hidden', 'true');
+        progress.appendChild(dot);
+      });
+
+      function showScreen(index) {
+        if (index < 0 || index >= screens.length) return;
+        screens[current].classList.remove('active');
+        current = index;
+        screens[current].classList.add('active');
+        [...progress.children].forEach((dot, i) => dot.classList.toggle('active', i === current));
+        document.body.classList.toggle('night', current >= 4 && current <= 5);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const heading = screens[current].querySelector('h1, h2');
+        if (heading) heading.focus?.({ preventScroll: true });
+      }
+
+      document.querySelectorAll('[data-next]').forEach(button => {
+        button.addEventListener('click', () => showScreen(current + 1));
+      });
+
+      // Balloon pop: hide balloon, then reveal the greeting and the first continue button.
+      const balloon = document.getElementById('balloon');
+      balloon.addEventListener('click', () => {
+        if (balloon.classList.contains('popped')) return;
+        const popSound = document.getElementById('balloonPopSound');
+        popSound.currentTime = 0;
+        popSound.play().catch(() => {});
+        balloon.classList.add('popped');
+        document.getElementById('balloonHint').hidden = true;
+        window.setTimeout(() => {
+          document.getElementById('balloonStage').hidden = true;
+          document.getElementById('popReveal').classList.add('show');
+        }, 330);
+      });
+
+      // Flip card with click, tap, Enter, or Space; show Next after the first flip.
+      const flipCard = document.getElementById('flipCard');
+      function flip() {
+        flipped = !flipped;
+        flipCard.classList.toggle('flipped', flipped);
+        flipCard.setAttribute('aria-pressed', String(flipped));
+        document.getElementById('flipNext').hidden = !flipped;
+        document.getElementById('flipInstruction').textContent = flipped ? 'Tap again if you want to see the other side ♡' : 'Click or tap to flip the card';
+      }
+      flipCard.addEventListener('click', flip);
+      flipCard.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); flip(); }
+      });
+
+      // Envelope opens once; then the full letter and its Next button are revealed.
+      const envelope = document.getElementById('envelope');
+      envelope.addEventListener('click', () => {
+        if (letterOpened) return;
+        letterOpened = true;
+        envelope.classList.add('open');
+        envelope.setAttribute('aria-expanded', 'true');
+        document.getElementById('envelopeHint').hidden = true;
+        window.setTimeout(() => document.getElementById('letterCopy').classList.add('show'), 450);
+      });
+
+      // Finale: celebrate with lightweight CSS confetti and fade in the photo/message.
+      function launchConfetti() {
+        const layer = document.getElementById('confettiLayer');
+        const colors = ['#ef9eae', '#f7c978', '#b9a5e8', '#a8d8c7', '#f7f0ba', '#f4a8cf'];
+        for (let i = 0; i < 115; i++) {
+          const piece = document.createElement('i');
+          piece.className = 'confetti';
+          piece.style.left = Math.random() * 100 + 'vw';
+          piece.style.background = colors[i % colors.length];
+          piece.style.setProperty('--drift', (Math.random() * 240 - 120) + 'px');
+          piece.style.setProperty('--duration', (2.4 + Math.random() * 2.1) + 's');
+          piece.style.animationDelay = (Math.random() * .7) + 's';
+          piece.style.borderRadius = Math.random() > .5 ? '50%' : '2px';
+          layer.appendChild(piece);
+          window.setTimeout(() => piece.remove(), 5200);
+        }
+      }
+      const birthdayMusic = document.getElementById('birthdayMusic');
+      const musicToggle = document.getElementById('musicToggle');
+      async function playBirthdayMusic() {
+        birthdayMusic.volume = 0.48;
+        try {
+          await birthdayMusic.play();
+          musicToggle.textContent = 'Pause birthday song ♡';
+          musicToggle.setAttribute('aria-pressed', 'true');
+        } catch (_) {
+          // Some browsers may block audio; the visible button lets him start it manually.
+          musicToggle.textContent = 'Play birthday song ♡';
+          musicToggle.setAttribute('aria-pressed', 'false');
+        }
+      }
+      musicToggle.addEventListener('click', async () => {
+        if (birthdayMusic.paused) {
+          await playBirthdayMusic();
+        } else {
+          birthdayMusic.pause();
+          musicToggle.textContent = 'Play birthday song ♡';
+          musicToggle.setAttribute('aria-pressed', 'false');
+        }
+      });
+      document.getElementById('finalButton').addEventListener('click', () => {
+        if (finaleShown) return;
+        finaleShown = true;
+        launchConfetti();
+        document.getElementById('finalAction').hidden = true;
+        document.getElementById('finalMessage').classList.add('show');
+        window.setTimeout(() => document.getElementById('finalPhoto').classList.add('visible'), 100);
+        // The click is a user gesture, allowing the attached birthday song to start here.
+        playBirthdayMusic();
+      });
+    })();
+  </script>
+</body>
+</html>
