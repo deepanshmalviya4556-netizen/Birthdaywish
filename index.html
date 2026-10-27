@@ -232,7 +232,10 @@
         <div class="pop-reveal" id="popReveal" aria-live="polite">
           <h1>Oyeee, birthday boy! 🎂</h1>
           <p>You thought I'd let your birthday pass without doing something special? Hehe. I made a little something for you, so stop being lazy and click here. 😭❤️</p>
-          <div class="actions"><button class="btn" type="button" data-next>Click Here ♡</button></div>
+          <div class="actions">
+            <button class="btn" type="button" data-next>Click Here ♡</button>
+            <button class="btn music-toggle" id="musicFallback" type="button" aria-pressed="false">Play birthday song ♡</button>
+          </div>
         </div>
         <p class="hint" id="balloonHint">Psst… tap the balloon</p>
       </section>
@@ -386,7 +389,13 @@
         if (balloon.classList.contains('popped')) return;
         const popSound = document.getElementById('balloonPopSound');
         popSound.currentTime = 0;
-        popSound.play().catch(() => {});
+        const startSongAfterPop = () => playBirthdayMusic();
+        // Wait for the pop effect to finish, then start the attached birthday piano.
+        popSound.addEventListener('ended', startSongAfterPop, { once: true });
+        popSound.play().catch(() => {
+          popSound.removeEventListener('ended', startSongAfterPop);
+          startSongAfterPop();
+        });
         balloon.classList.add('popped');
         document.getElementById('balloonHint').hidden = true;
         window.setTimeout(() => {
@@ -438,28 +447,32 @@
         }
       }
       const birthdayMusic = document.getElementById('birthdayMusic');
-      const musicToggle = document.getElementById('musicToggle');
+      const musicButtons = [document.getElementById('musicToggle'), document.getElementById('musicFallback')].filter(Boolean);
+      function setMusicButtonState(isPlaying) {
+        musicButtons.forEach(button => {
+          button.textContent = isPlaying ? 'Pause birthday song ♡' : 'Play birthday song ♡';
+          button.setAttribute('aria-pressed', String(isPlaying));
+        });
+      }
       async function playBirthdayMusic() {
         birthdayMusic.volume = 0.48;
         try {
-          await birthdayMusic.play();
-          musicToggle.textContent = 'Pause birthday song ♡';
-          musicToggle.setAttribute('aria-pressed', 'true');
+          if (birthdayMusic.paused) await birthdayMusic.play();
+          setMusicButtonState(true);
         } catch (_) {
-          // Some browsers may block audio; the visible button lets him start it manually.
-          musicToggle.textContent = 'Play birthday song ♡';
-          musicToggle.setAttribute('aria-pressed', 'false');
+          // If a browser blocks automatic playback, the visible play button is the fallback.
+          setMusicButtonState(false);
         }
       }
-      musicToggle.addEventListener('click', async () => {
+      function toggleBirthdayMusic() {
         if (birthdayMusic.paused) {
-          await playBirthdayMusic();
+          playBirthdayMusic();
         } else {
           birthdayMusic.pause();
-          musicToggle.textContent = 'Play birthday song ♡';
-          musicToggle.setAttribute('aria-pressed', 'false');
+          setMusicButtonState(false);
         }
-      });
+      }
+      musicButtons.forEach(button => button.addEventListener('click', toggleBirthdayMusic));
       document.getElementById('finalButton').addEventListener('click', () => {
         if (finaleShown) return;
         finaleShown = true;
